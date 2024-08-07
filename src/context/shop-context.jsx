@@ -1,58 +1,79 @@
-import { createContext, useEffect, useState } from "react";
-import { PRODUCTS } from "../products";
-
-export const ShopContext = createContext(null);
+import React, { createContext, useState, useMemo, useCallback } from "react";
+import { PRODUCTS } from "../data/products";
 
 const getDefaultCart = () => {
-  let cart = {};
-  for (let i = 1; i < PRODUCTS.length + 1; i++) {
-    cart[i] = 0;
-  }
+  const cart = {};
+  PRODUCTS.forEach((product) => {
+    cart[product.id] = 0;
+  });
   return cart;
 };
 
-export const ShopContextProvider = (props) => {
+const calculateTotalCartAmount = (cartItems) => {
+  return Object.entries(cartItems).reduce((total, [itemId, quantity]) => {
+    const item = PRODUCTS.find((product) => product.id === Number(itemId));
+    return total + (item ? item.price * quantity : 0);
+  }, 0);
+};
+
+const defaultContextValue = {
+  cartItems: getDefaultCart(),
+  addToCart: (id) => {},
+  removeFromCart: (id) => {},
+  updateCartItemCount: (count, id) => {},
+  getTotalCartAmount: () => 0,
+  checkout: () => {},
+};
+
+export const ShopContext = createContext(defaultContextValue);
+
+export const ShopContextProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(getDefaultCart());
 
-  const getTotalCartAmount = () => {
-    let totalAmount = 0;
-    for (const item in cartItems) {
-      if (cartItems[item] > 0) {
-        let itemInfo = PRODUCTS.find((product) => product.id === Number(item));
-        totalAmount += cartItems[item] * itemInfo.price;
-      }
-    }
-    return totalAmount;
-  };
-
-  const addToCart = (itemId) => {
+  const addToCart = useCallback((itemId) => {
     setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] + 1 }));
-  };
+  }, []);
 
-  const removeFromCart = (itemId) => {
-    setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] - 1 }));
-  };
+  const removeFromCart = useCallback((itemId) => {
+    setCartItems((prev) => ({
+      ...prev,
+      [itemId]: Math.max(prev[itemId] - 1, 0),
+    }));
+  }, []);
 
-  const updateCartItemCount = (newAmount, itemId) => {
+  const updateCartItemCount = useCallback((newAmount, itemId) => {
     setCartItems((prev) => ({ ...prev, [itemId]: newAmount }));
-  };
+  }, []);
 
-  const checkout = () => {
+  const checkout = useCallback(() => {
     setCartItems(getDefaultCart());
-  };
+  }, []);
 
-  const contextValue = {
-    cartItems,
-    addToCart,
-    updateCartItemCount,
-    removeFromCart,
-    getTotalCartAmount,
-    checkout,
-  };
+  const getTotalCartAmount = useCallback(
+    () => calculateTotalCartAmount(cartItems),
+    [cartItems]
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      cartItems,
+      addToCart,
+      removeFromCart,
+      updateCartItemCount,
+      getTotalCartAmount,
+      checkout,
+    }),
+    [
+      cartItems,
+      addToCart,
+      removeFromCart,
+      updateCartItemCount,
+      getTotalCartAmount,
+      checkout,
+    ]
+  );
 
   return (
-    <ShopContext.Provider value={contextValue}>
-      {props.children}
-    </ShopContext.Provider>
+    <ShopContext.Provider value={contextValue}>{children}</ShopContext.Provider>
   );
 };

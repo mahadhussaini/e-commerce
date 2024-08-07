@@ -1,18 +1,32 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { ShoppingCart } from "phosphor-react";
 import "./navbar.css";
 
 export const Navbar = () => {
   return (
-    <div className="navbar">
+    <nav className="navbar" aria-label="Main Navigation">
       <div className="links">
-        <Link to="/"> Shop </Link>
-        <Link to="/contact"> Contact </Link>
-        <Link to="/cart">
-          <ShoppingCart size={32} />
-        </Link>
+        <NavLink
+          to="/"
+          className={({ isActive }) => (isActive ? "active-link" : undefined)}
+        >
+          Shop
+        </NavLink>
+        <NavLink
+          to="/contact"
+          className={({ isActive }) => (isActive ? "active-link" : undefined)}
+        >
+          Contact
+        </NavLink>
+        <NavLink
+          to="/cart"
+          className={({ isActive }) => (isActive ? "active-link" : undefined)}
+          aria-label="Cart"
+        >
+          <ShoppingCart size={20} />
+        </NavLink>
       </div>
-    </div>
+    </nav>
   );
 };
